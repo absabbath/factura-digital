@@ -1,6 +1,6 @@
 # Libreria facturación electrónica
 
-  **absabbath/factura-digital** es una libreria para consumir la api de facturadigital.com.mx
+  **absabbath/factura-digital** es una libreria para consumir la api de [https://www.facturadigital.com.mx/](https://www.facturadigital.com.mx/) en un proyecto de Laravel
 
 # Instalación
 
@@ -42,7 +42,7 @@ $creditos =  \FacturaDigital::creditos()
 
 ```json
 {
-	"mensaje":  "11565 creditos disponibles.",
+    "mensaje":  "11565 creditos disponibles.",
     "creditos":  11565,
     "codigo":  200
 }
@@ -84,11 +84,11 @@ $concepto = \FacturaDigital::concepto()
 ```php
 $impuestos = []; // Recolecta la informacion de todos los impuestos
 $impuesto_iva = \FacturaDigital::conceptoImpuesto()
-            ->setBase($baseGravable)
+            ->setBase(30) // Base gravable
             ->setImpuesto('002')
             ->setTipoFactor('Tasa')
             ->setTasaOCuota(0.16000)
-            ->setImporte($baseGravable * 0.16000)
+            ->setImporte(30 * 0.16000) // Base gravable X tasaocuota
             ->getData();
 ```
 
@@ -201,4 +201,4 @@ if ($enviar) {
 $cancela = $factura->cancelarCFDI('UUID');
 ```
 
-> Fue probado en versiones de laravel >= 5.1
+> Fue probado en versiones de Laravel >= 5.1
