@@ -7,47 +7,55 @@ use GuzzleHttp\Client as GuzzleClient;
 class Factura
 {
 
-	private $concepto;
-	private $listaConceptos;
-	private $receptor;
-	private $impuesto;
-	private $emisor;
+    private $concepto;
+    private $listaConceptos;
+    private $receptor;
+    private $impuesto;
+    private $emisor;
+    private $complemento;
+    private $doctoRelacionado;
 
-	private $Serie;
+    private $Serie;
     private $Observaciones;
-	private $Folio;
-	private $Fecha;
-	private $FormaPago;
-	private $CondicionesDePago;
-	private $SubTotal;
-	private $Descuento;
-	private $Moneda;
-	private $TipoCambio;
-	private $Total;
-	private $TipoDeComprobante;
-	private $MetodoPago;
-	private $LugarExpedicion;
-	private $LeyendaFolio;
+    private $Folio;
+    private $Fecha;
+    private $FormaPago;
+    private $CondicionesDePago;
+    private $SubTotal;
+    private $Descuento;
+    private $Moneda;
+    private $TipoCambio;
+    private $Total;
+    private $TipoDeComprobante;
+    private $MetodoPago;
+    private $LugarExpedicion;
+    private $LeyendaFolio;
     private $conceptoImpuesto;
 
-	private $data;
+    private $data;
 
-	public function __construct(
-		FacturaConcepto $concepto, 
-		FacturaConceptoLista $listaConceptos, 
-		FacturaReceptor $receptor, 
-		FacturaImpuesto $impuesto,
-		FacturaEmisor $emisor,
-        ConceptoImpuesto $conceptoImpuesto
+    public function __construct(
+        FacturaConcepto $concepto, 
+        FacturaConceptoLista $listaConceptos, 
+        FacturaReceptor $receptor, 
+        FacturaImpuesto $impuesto,
+        FacturaEmisor $emisor,
+        ConceptoImpuesto $conceptoImpuesto,
+        Complemento $complemento,
+        Pago $pago,
+        DoctoRelacionado $doctoRelacionado
     )
-	{
-		$this->concepto = $concepto;
-		$this->listaConceptos = $listaConceptos;
-		$this->receptor = $receptor;
-		$this->impuesto = $impuesto;
-		$this->emisor = $emisor;
+    {
+        $this->concepto = $concepto;
+        $this->listaConceptos = $listaConceptos;
+        $this->receptor = $receptor;
+        $this->impuesto = $impuesto;
+        $this->emisor = $emisor;
         $this->conceptoImpuesto = $conceptoImpuesto;
-	}
+        $this->complemento = $complemento;
+        $this->pago = $pago;
+        $this->doctoRelacionado = $doctoRelacionado;
+    }
 
 
     /**
@@ -56,7 +64,7 @@ class Factura
     
     public function concepto()
     {
-    	return $this->concepto;
+        return $this->concepto;
     }
 
     public function conceptoImpuesto()
@@ -70,7 +78,7 @@ class Factura
      */
     public function listaConceptos()
     {
-    	return $this->listaConceptos;
+        return $this->listaConceptos;
     }
 
 
@@ -79,7 +87,7 @@ class Factura
      */
     public function receptor()
     {
-    	return $this->receptor;
+        return $this->receptor;
     }
 
 
@@ -88,78 +96,99 @@ class Factura
      */
     public function impuesto()
     {
-    	return $this->impuesto;
+        return $this->impuesto;
     }
 
 
      /**
-     * @var FacturaEmisor $emisro
+     * @var FacturaEmisor $emisor
      */
-     public function emisor()
-     {
-     	return $this->emisor;
-     }
+    public function emisor()
+    {
+        return $this->emisor;
+    }
 
+    /**
+     * @var Complemento $complemento
+     */
+    public function complemento(){
+        return $this->complemento;
+    }
 
+    /**
+     * @var Pago $pago
+     */
+    public function pago(){
+        return $this->pago;
+    }
 
-	/**
-	 * Consulta el numero de creditos restantes
-	 * @return @array [mensaje, creditos, codigo] respuesta de la api
-	 */
-	public function creditos()
-	{
-		
-		$client = new GuzzleClient();
-		$res = $client->request('POST', $this->base_url().'/cfdi/creditos', [
-			'headers' => $this->credenciales()
-		]);
+    /**
+     * @var DoctoRelacionado $doctoRelacionado
+     */
+    public function docto_relacionado(){
+        return $this->doctoRelacionado;
+    }
 
-		$respuesta = $res->getBody()->getContents();
-		$data = json_decode($respuesta, true);
+    /**
+     * Consulta el numero de creditos restantes
+     * @return @array [mensaje, creditos, codigo] respuesta de la api
+     */
+    public function creditos()
+    {
+        
+        $client = new GuzzleClient();
+        $res = $client->request('POST', $this->base_url().'/cfdi/creditos', [
+            'headers' => $this->credenciales()
+        ]);
 
-		return $data;
-	}
+        $respuesta = $res->getBody()->getContents();
+        $data = json_decode($respuesta, true);
+
+        return $data;
+    }
 
     /**
      * Genera la factura obteniendo los datos capturados
      * @return array Devuelve ligas de la factura e identificador
      */
-	public function enviar()
-	{
-		$res = null;
+    public function enviar()
+    {
+        $res = null;
         $data_cfdi = [];
 
-		try {
+        try {
 
-			$data = $this->getData();
+            $data = $this->getData();
+
+            error_log(json_encode($data));
             $part_headers = ['Accept' => 'application/json', 'jsoncfdi' =>  json_encode($data) ];
-			$headers = array_merge( $this->credenciales(), $part_headers);
+            $headers = array_merge( $this->credenciales(), $part_headers);
 
-			$randomkey = rand(5, 9999999999999999);
+            $randomkey = rand(5, 9999999999999999);
 
 
-			$client = new GuzzleClient();
-			$res = $client->request('POST', $this->base_url().'/cfdi/generar/'.$randomkey, [
-				'headers' => $headers
-			]);
+            $client = new GuzzleClient();
+            $res = $client->request('POST', $this->base_url().'/cfdi/generar/'.$randomkey, [
+                'headers' => $headers
+            ]);
 
-			if ($res) {
-				$respuesta = $res->getBody()->getContents();
+            if ($res) {
+                $respuesta = $res->getBody()->getContents();
                 $data = json_decode($respuesta, true);
                 $data_cfdi = $data;
-			} else {
-				return "Error api";
-			}
+            } else {
+                return "Error api";
+            }
 
-		} catch (\GuzzleHttp\Exception\ClientException $e) {
-			 //dd($e->getResponse()->getBody()->getContents());
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+             //dd($e->getResponse()->getBody()->getContents());
              $error = json_decode($e->getResponse()->getBody()->getContents());
              $error = (array)$error;
              $data_cfdi = $error;
-		}
+        }
 
         return $data_cfdi;
-	}
+    }
 
     /**
      * enviarCorreo Envia la factura al correo indicado
@@ -256,29 +285,29 @@ class Factura
     }
 
 
-	/**
-	 * Obtiene la url base de la api
-	 * @return @string URL
-	 */
-	protected function base_url()
-	{
-		$url_base = 'http://app.facturadigital.com.mx/api';
+    /**
+     * Obtiene la url base de la api
+     * @return @string URL
+     */
+    protected function base_url()
+    {
+        $url_base = 'http://app.facturadigital.com.mx/api';
 
-		return $url_base ;
-	}
+        return $url_base ;
+    }
 
 
-	/**
-	 * Obtiene las cebeceras necerarias para el inicio de sesion
-	 * @return @array con usuario y contraseña
-	 */
-	protected function credenciales()
-	{
-		$headers = array('api-usuario' 	=> $this->emisor->getUser(), 
-			'api-password' => $this->emisor->getPassword());
+    /**
+     * Obtiene las cebeceras necerarias para el inicio de sesion
+     * @return @array con usuario y contraseña
+     */
+    protected function credenciales()
+    {
+        $headers = array('api-usuario'  => $this->emisor->getUser(), 
+            'api-password' => $this->emisor->getPassword());
 
-		return $headers;
-	}
+        return $headers;
+    }
 
     public function precioSinIva($precioConIva)
     {
@@ -292,21 +321,21 @@ class Factura
         return $data;
     }
 
-	/**
-	 * Devuelve el arreglo con los datos correctos
-	 * @return Array
-	 */
-	public function getData()
-	{
-		return $this->data;
-	}
+    /**
+     * Devuelve el arreglo con los datos correctos
+     * @return Array
+     */
+    public function getData()
+    {
+        return $this->data;
+    }
 
     /**
      * @return mixed
      */
     public function getSerie()
     {
-    	return $this->Serie;
+        return $this->Serie;
     }
 
     /**
@@ -316,9 +345,9 @@ class Factura
      */
     public function setSerie($Serie)
     {
-    	$this->Serie = $Serie;
-    	$this->data['Serie'] = $Serie;
-    	return $this;
+        $this->Serie = $Serie;
+        $this->data['Serie'] = $Serie;
+        return $this;
     }
 
     /**
@@ -346,7 +375,7 @@ class Factura
      */
     public function getFolio()
     {
-    	return $this->Folio;
+        return $this->Folio;
     }
 
     /**
@@ -356,9 +385,9 @@ class Factura
      */
     public function setFolio($Folio)
     {
-    	$this->Folio = $Folio;
-    	$this->data['Folio'] = $Folio;
-    	return $this;
+        $this->Folio = $Folio;
+        $this->data['Folio'] = $Folio;
+        return $this;
     }
 
     /**
@@ -366,7 +395,7 @@ class Factura
      */
     public function getFecha()
     {
-    	return $this->Fecha;
+        return $this->Fecha;
     }
 
     /**
@@ -376,9 +405,9 @@ class Factura
      */
     public function setFecha($Fecha)
     {
-    	$this->Fecha = $Fecha;
-    	$this->data['Fecha'] = $Fecha;
-    	return $this;
+        $this->Fecha = $Fecha;
+        $this->data['Fecha'] = $Fecha;
+        return $this;
     }
 
     /**
@@ -386,7 +415,7 @@ class Factura
      */
     public function getFormaPago()
     {
-    	return $this->FormaPago;
+        return $this->FormaPago;
     }
 
     /**
@@ -396,9 +425,9 @@ class Factura
      */
     public function setFormaPago($FormaPago)
     {
-    	$this->FormaPago = $FormaPago;
-    	$this->data['FormaPago'] = $FormaPago;
-    	return $this;
+        $this->FormaPago = $FormaPago;
+        $this->data['FormaPago'] = $FormaPago;
+        return $this;
     }
 
     /**
@@ -406,7 +435,7 @@ class Factura
      */
     public function getCondicionesDePago()
     {
-    	return $this->CondicionesDePago;
+        return $this->CondicionesDePago;
     }
 
     /**
@@ -416,9 +445,9 @@ class Factura
      */
     public function setCondicionesDePago($CondicionesDePago)
     {
-    	$this->CondicionesDePago = $CondicionesDePago;
-    	$this->data['CondicionesDePago'] = $CondicionesDePago;
-    	return $this;
+        $this->CondicionesDePago = $CondicionesDePago;
+        $this->data['CondicionesDePago'] = $CondicionesDePago;
+        return $this;
     }
 
     /**
@@ -426,7 +455,7 @@ class Factura
      */
     public function getSubTotal()
     {
-    	return $this->SubTotal;
+        return $this->SubTotal;
     }
 
     /**
@@ -436,9 +465,9 @@ class Factura
      */
     public function setSubTotal($SubTotal)
     {
-    	$this->SubTotal = $SubTotal;
-    	$this->data['SubTotal'] = number_format($SubTotal, 2, '.', '');
-    	return $this;
+        $this->SubTotal = $SubTotal;
+        $this->data['SubTotal'] = number_format($SubTotal, 2, '.', '');
+        return $this;
     }
 
     /**
@@ -446,7 +475,7 @@ class Factura
      */
     public function getDescuento()
     {
-    	return $this->Descuento;
+        return $this->Descuento;
     }
 
     /**
@@ -456,9 +485,9 @@ class Factura
      */
     public function setDescuento($Descuento)
     {
-    	$this->Descuento = $Descuento;
-    	$this->data['Descuento'] = number_format($Descuento, 2, '.', '');
-    	return $this;
+        $this->Descuento = $Descuento;
+        $this->data['Descuento'] = number_format($Descuento, 2, '.', '');
+        return $this;
     }
 
     /**
@@ -466,7 +495,7 @@ class Factura
      */
     public function getMoneda()
     {
-    	return $this->Moneda;
+        return $this->Moneda;
     }
 
     /**
@@ -476,9 +505,9 @@ class Factura
      */
     public function setMoneda($Moneda)
     {
-    	$this->Moneda = $Moneda;
-    	$this->data['Moneda'] = $Moneda;
-    	return $this;
+        $this->Moneda = $Moneda;
+        $this->data['Moneda'] = $Moneda;
+        return $this;
     }
 
     /**
@@ -486,7 +515,7 @@ class Factura
      */
     public function getTipoCambio()
     {
-    	return $this->TipoCambio;
+        return $this->TipoCambio;
     }
 
     /**
@@ -496,9 +525,9 @@ class Factura
      */
     public function setTipoCambio($TipoCambio)
     {
-    	$this->TipoCambio = $TipoCambio;
-    	$this->data['TipoCambio'] = $TipoCambio;
-    	return $this;
+        $this->TipoCambio = $TipoCambio;
+        $this->data['TipoCambio'] = $TipoCambio;
+        return $this;
     }
 
     /**
@@ -506,7 +535,7 @@ class Factura
      */
     public function getTotal()
     {
-    	return $this->Total;
+        return $this->Total;
     }
 
     /**
@@ -516,9 +545,9 @@ class Factura
      */
     public function setTotal($Total)
     {
-    	$this->Total = $Total;
-    	$this->data['Total'] = number_format($Total, 2, '.', '');
-    	return $this;
+        $this->Total = $Total;
+        $this->data['Total'] = number_format($Total, 2, '.', '');
+        return $this;
     }
 
     /**
@@ -526,7 +555,7 @@ class Factura
      */
     public function getTipoDeComprobante()
     {
-    	return $this->TipoDeComprobante;
+        return $this->TipoDeComprobante;
     }
 
     /**
@@ -536,9 +565,9 @@ class Factura
      */
     public function setTipoDeComprobante($TipoDeComprobante)
     {
-    	$this->TipoDeComprobante = $TipoDeComprobante;
-    	$this->data['TipoDeComprobante'] = $TipoDeComprobante;
-    	return $this;
+        $this->TipoDeComprobante = $TipoDeComprobante;
+        $this->data['TipoDeComprobante'] = $TipoDeComprobante;
+        return $this;
     }
 
     /**
@@ -546,7 +575,7 @@ class Factura
      */
     public function getMetodoPago()
     {
-    	return $this->MetodoPago;
+        return $this->MetodoPago;
     }
 
     /**
@@ -556,9 +585,9 @@ class Factura
      */
     public function setMetodoPago($MetodoPago)
     {
-    	$this->MetodoPago = $MetodoPago;
-    	$this->data['MetodoPago'] = $MetodoPago;
-    	return $this;
+        $this->MetodoPago = $MetodoPago;
+        $this->data['MetodoPago'] = $MetodoPago;
+        return $this;
     }
 
     /**
@@ -566,7 +595,7 @@ class Factura
      */
     public function getLugarExpedicion()
     {
-    	return $this->LugarExpedicion;
+        return $this->LugarExpedicion;
     }
 
     /**
@@ -576,9 +605,9 @@ class Factura
      */
     public function setLugarExpedicion($LugarExpedicion)
     {
-    	$this->LugarExpedicion = $LugarExpedicion;
-    	$this->data['LugarExpedicion'] = $LugarExpedicion;
-    	return $this;
+        $this->LugarExpedicion = $LugarExpedicion;
+        $this->data['LugarExpedicion'] = $LugarExpedicion;
+        return $this;
     }
 
     /**
@@ -586,7 +615,7 @@ class Factura
      */
     public function getLeyendaFolio()
     {
-    	return $this->LeyendaFolio;
+        return $this->LeyendaFolio;
     }
 
     /**
@@ -596,29 +625,33 @@ class Factura
      */
     public function setLeyendaFolio($LeyendaFolio)
     {
-    	$this->LeyendaFolio = $LeyendaFolio;
-    	$this->data['LeyendaFolio'] = $LeyendaFolio;
-    	return $this;
+        $this->LeyendaFolio = $LeyendaFolio;
+        $this->data['LeyendaFolio'] = $LeyendaFolio;
+        return $this;
     }
 
     public function setReceptor($receptor)
     {
-    	$this->data['Receptor'] = $receptor;
+        $this->data['Receptor'] = $receptor;
     }
 
     public function setConceptos($conceptos)
     {
-    	$this->data['Conceptos'] = $conceptos;
+        $this->data['Conceptos'] = $conceptos;
     }
 
     public function setImpuestos($impuestos)
     {
-    	$this->data['Impuestos'] = $impuestos;
+        $this->data['Impuestos'] = $impuestos;
     }
 
     public function setEmisor($emisor)
     {
-    	$this->data['Emisor'] = $emisor;
+        $this->data['Emisor'] = $emisor;
+    }
+
+    public function setComplemento($complemento){
+        $this->data['Complemento'] = $complemento;
     }
 
 }

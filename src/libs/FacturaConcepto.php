@@ -4,20 +4,32 @@ namespace  Absabbath\FacturaDigital\Lib;
 
 class FacturaConcepto
 {
-	
-	private $ClaveProdServ;
-	private $NoIdentificacion;
-	private $Cantidad=0;
-	private $ClaveUnidad;
-	private $Unidad;
-	private $Descripcion;
-	private $ValorUnitario=0;
-	private $Importe;
-	private $Descuento;
-	private $data;
+    
+    private $ClaveProdServ;
+    private $NoIdentificacion;
+    private $Cantidad=0;
+    private $ClaveUnidad;
+    private $Unidad;
+    private $Descripcion;
+    private $ValorUnitario=0;
+    private $Importe;
+    private $Descuento;
+    private $data;
     private $traslado;
     private $CalculoManual = false;
     private $Traslados = [];
+
+    private $tipo = 'F';
+
+
+    public function getTipo(){
+        return $this->tipo;
+    }
+
+    public function setTipo($tipo){
+        $this->tipo = $tipo;
+        return $this;
+    }
     
 
     public function addTraslado($traslado){
@@ -211,17 +223,21 @@ class FacturaConcepto
 
     public function __toString()
     {
-    	return (array)$this;
+        return (array)$this;
     }
 
     public function getData()
     {
-        // return $this->data;
-        return array_merge($this->data, [
-            'Impuestos'=>[
-                'Traslados'=> $this->Traslados
-            ]
-        ]);
+        if($this->tipo=='F'){
+            $data = array_merge($this->data, [
+                'Impuestos'=>[
+                    'Traslados'=> $this->Traslados
+                ]
+            ]);
+        }else{
+            $data = $this->data;
+        }
+        return $data;
     }
 
     /**
