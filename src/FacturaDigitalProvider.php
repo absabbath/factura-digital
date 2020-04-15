@@ -10,6 +10,9 @@ use Absabbath\FacturaDigital\Lib\FacturaReceptor;
 use Absabbath\FacturaDigital\Lib\FacturaImpuesto;
 use Absabbath\FacturaDigital\Lib\FacturaEmisor;
 use Absabbath\FacturaDigital\Lib\ConceptoImpuesto;
+use Absabbath\FacturaDigital\Lib\Complemento;
+use Absabbath\FacturaDigital\Lib\Pago;
+use Absabbath\FacturaDigital\Lib\DoctoRelacionado;
 
 
 class FacturaDigitalProvider extends ServiceProvider
@@ -39,7 +42,10 @@ class FacturaDigitalProvider extends ServiceProvider
                 new FacturaReceptor(), 
                 new FacturaImpuesto(), 
                 new FacturaEmisor(),
-                new ConceptoImpuesto()
+                new ConceptoImpuesto(),
+                new Complemento(),
+                new Pago(),
+                new DoctoRelacionado()
             );
         });
     }
