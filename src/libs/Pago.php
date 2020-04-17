@@ -206,12 +206,12 @@ class Pago{
     }
 
     /**
-     * @param mixed $Base
+     * @param mixed $RfcEmisorCtaBen
      *
      * @return self
      */
     public function setRfcEmisorCtaBen($RfcEmisorCtaBen){
-        $this->RfcEmisorCtaBen = $Base;
+        $this->RfcEmisorCtaBen = $RfcEmisorCtaBen;
         $this->data['RfcEmisorCtaBen'] = $RfcEmisorCtaBen;
         return $this;
     }
